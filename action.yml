@@ -1,0 +1,19 @@
+name: timedtext-lint
+description: Lint SRT and WebVTT subtitle files
+author: electrosparklez
+
+inputs:
+  paths:
+    description: One or more newline-separated subtitle files or directories to lint
+    required: true
+  config:
+    description: Optional path to a timedtext-lint JSON configuration file
+    required: false
+
+runs:
+  using: node24
+  main: dist/action.mjs
+
+branding:
+  icon: check-circle
+  color: purple

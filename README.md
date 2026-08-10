@@ -36,6 +36,32 @@ After the package is published, the intended usage is:
 npx timedtext-lint subtitles/
 ```
 
+## GitHub Action
+
+Use the action to lint subtitle files without adding a Node setup or install step to your workflow:
+
+```yaml
+name: Lint subtitles
+
+on: [pull_request]
+
+jobs:
+  timedtext-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: electrosparklez/timedtext-lint@main
+        with:
+          paths: |
+            subtitles/
+            captions/intro.vtt
+          config: .timedtextlintrc.json
+```
+
+`paths` is required and accepts one file or directory per line. Paths are resolved from the checked-out repository, and directories are scanned recursively for `.srt` and `.vtt` files. `config` is optional and accepts the path to a JSON configuration file.
+
+The step succeeds when there are no lint errors, fails with exit code `1` when lint errors are found, and fails with exit code `2` for invalid input, configuration, or runtime errors. See [the complete example workflow](.github/examples/timedtext-lint.yml).
+
 ## CLI
 
 ```text
@@ -114,7 +140,7 @@ console.log(result.issues);
 
 Subtitle mistakes are easy to miss in review because timing, line length, readability, and file syntax live in the same tiny text format. A linter turns those checks into repeatable, reviewable automation.
 
-The long-term goal is to provide a small core that works locally, in CI, and eventually through a first-class GitHub Action.
+The project provides a small core that works locally, in CI, and through a first-class GitHub Action.
 
 ## Roadmap
 
@@ -126,7 +152,7 @@ The long-term goal is to provide a small core that works locally, in CI, and eve
 - [x] JSON rule configuration
 - [x] recursive directory scanning
 - [x] CI test workflow
-- [ ] GitHub Action wrapper
+- [x] GitHub Action wrapper
 - [ ] SARIF / GitHub code-scanning output
 - [ ] safe `--fix` operations
 - [ ] richer WebVTT validation

@@ -22,3 +22,14 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
+      - name: Verify committed action bundle
+        run: git diff --exit-code -- dist/action.mjs
+
+  action-smoke-test:
+    name: Action smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./
+        with:
+          paths: tests/fixtures/good.srt

@@ -50,7 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: electrosparklez/timedtext-lint@v0.2.0
+      - uses: electrosparklez/timedtext-lint@main
         with:
           paths: |
             subtitles/

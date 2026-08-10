@@ -5,7 +5,7 @@ A fast, deterministic, CI-friendly linter for **SRT** and **WebVTT** subtitle/ca
 `timedtext-lint` catches timing mistakes and readability problems before subtitle files ship.
 It runs entirely offline and can be used as a CLI or as a TypeScript/JavaScript library.
 
-> Status: early v0.1 development. Feedback, test files, and rule ideas are welcome.
+> Status: early development. Feedback, test files, and rule ideas are welcome.
 
 ## What it catches
 
@@ -50,7 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: electrosparklez/timedtext-lint@main
+      - uses: electrosparklez/timedtext-lint@v0.2.0
         with:
           paths: |
             subtitles/

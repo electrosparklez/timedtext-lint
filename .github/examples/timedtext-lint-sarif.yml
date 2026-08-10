@@ -1,6 +1,7 @@
 name: Subtitle code scanning
 
-on: [push, pull_request]
+# SARIF upload needs security-events: write, which forked pull requests cannot receive.
+on: push
 
 permissions:
   contents: read

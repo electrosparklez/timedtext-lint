@@ -1,12 +1,12 @@
 import { readFile } from 'node:fs/promises';
 import { discoverConfig, loadConfig } from './config.js';
 import { collectSubtitleFiles } from './files.js';
-import { formatHuman, formatJson, summarize } from './formatters.js';
+import { formatHuman, formatJson, formatSarif, summarize } from './formatters.js';
 import { lintText } from './linter.js';
 
 interface Args {
   inputs: string[];
-  format: 'human' | 'json';
+  format: 'human' | 'json' | 'sarif';
   configPath?: string;
   configDiscovery: boolean;
 }
@@ -26,7 +26,8 @@ Usage:
   timedtext-lint <file-or-directory> [...more paths] [options]
 
 Options:
-  --format human|json     Output format (default: human)
+  --format human|json|sarif
+                          Output format (default: human)
   --config <path>         Load a JSON configuration file (overrides discovery)
   --no-config-discovery   Disable automatic configuration discovery
   -h, --help              Show this help
@@ -45,7 +46,9 @@ function parseArgs(argv: string[]): Args | null {
     if (arg === '--help' || arg === '-h') return null;
     if (arg === '--format') {
       const value = argv[++index];
-      if (value !== 'human' && value !== 'json') throw new Error('--format must be human or json.');
+      if (value !== 'human' && value !== 'json' && value !== 'sarif') {
+        throw new Error('--format must be human, json, or sarif.');
+      }
       args.format = value;
       continue;
     }
@@ -96,7 +99,8 @@ export async function runCli(
       return 0;
     }
 
-    const config = await loadCliConfig(args, options.cwd ?? process.cwd());
+    const cwd = options.cwd ?? process.cwd();
+    const config = await loadCliConfig(args, cwd);
     const files = await collectSubtitleFiles(args.inputs);
     if (files.length === 0) throw new Error('No .srt or .vtt files found.');
 
@@ -106,7 +110,13 @@ export async function runCli(
       results.push(lintText(source, file, config));
     }
 
-    io.log(args.format === 'json' ? formatJson(results) : formatHuman(results));
+    io.log(
+      args.format === 'json'
+        ? formatJson(results)
+        : args.format === 'sarif'
+          ? formatSarif(results, cwd)
+          : formatHuman(results)
+    );
     return summarize(results).errors > 0 ? 1 : 0;
   } catch (error) {
     io.error(`timedtext-lint: ${error instanceof Error ? error.message : String(error)}`);

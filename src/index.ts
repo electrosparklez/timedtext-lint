@@ -1,4 +1,4 @@
-export { loadConfig } from './config.js';
+export { CONFIG_FILENAME, discoverConfig, loadConfig } from './config.js';
 export { lintText } from './linter.js';
 export { detectFormat, parseTimedText } from './parsers/index.js';
 export { rules, knownRuleIds } from './rules/index.js';

@@ -7,7 +7,7 @@ inputs:
     description: One or more newline-separated subtitle files or directories to lint
     required: true
   config:
-    description: Optional path to a timedtext-lint JSON configuration file
+    description: Optional explicit config path; takes priority over automatic discovery
     required: false
 
 runs:

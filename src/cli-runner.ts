@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { loadConfig } from './config.js';
+import { discoverConfig, loadConfig } from './config.js';
 import { collectSubtitleFiles } from './files.js';
 import { formatHuman, formatJson, summarize } from './formatters.js';
 import { lintText } from './linter.js';
@@ -8,6 +8,11 @@ interface Args {
   inputs: string[];
   format: 'human' | 'json';
   configPath?: string;
+  configDiscovery: boolean;
+}
+
+export interface CliRunOptions {
+  cwd?: string;
 }
 
 export interface CliIo {
@@ -21,9 +26,10 @@ Usage:
   timedtext-lint <file-or-directory> [...more paths] [options]
 
 Options:
-  --format human|json    Output format (default: human)
-  --config <path>        Load a JSON configuration file
-  -h, --help             Show this help
+  --format human|json     Output format (default: human)
+  --config <path>         Load a JSON configuration file (overrides discovery)
+  --no-config-discovery   Disable automatic configuration discovery
+  -h, --help              Show this help
 
 Examples:
   timedtext-lint subtitles/
@@ -32,7 +38,7 @@ Examples:
 `;
 
 function parseArgs(argv: string[]): Args | null {
-  const args: Args = { inputs: [], format: 'human' };
+  const args: Args = { inputs: [], format: 'human', configDiscovery: true };
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -49,6 +55,10 @@ function parseArgs(argv: string[]): Args | null {
       args.configPath = value;
       continue;
     }
+    if (arg === '--no-config-discovery') {
+      args.configDiscovery = false;
+      continue;
+    }
     if (arg.startsWith('-')) throw new Error(`Unknown option: ${arg}`);
     args.inputs.push(arg);
   }
@@ -58,7 +68,27 @@ function parseArgs(argv: string[]): Args | null {
   return args;
 }
 
-export async function runCli(argv: string[], io: CliIo = console): Promise<number> {
+async function loadCliConfig(args: Args, cwd: string) {
+  if (args.configPath) return loadConfig(args.configPath);
+  if (!args.configDiscovery) return loadConfig();
+
+  const discoveredPath = await discoverConfig(cwd);
+  if (!discoveredPath) return loadConfig();
+
+  try {
+    return await loadConfig(discoveredPath);
+  } catch (error) {
+    throw new Error(
+      `Discovered configuration "${discoveredPath}" is invalid: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+}
+
+export async function runCli(
+  argv: string[],
+  io: CliIo = console,
+  options: CliRunOptions = {}
+): Promise<number> {
   try {
     const args = parseArgs(argv);
     if (!args) {
@@ -66,7 +96,7 @@ export async function runCli(argv: string[], io: CliIo = console): Promise<numbe
       return 0;
     }
 
-    const config = await loadConfig(args.configPath);
+    const config = await loadCliConfig(args, options.cwd ?? process.cwd());
     const files = await collectSubtitleFiles(args.inputs);
     if (files.length === 0) throw new Error('No .srt or .vtt files found.');
 

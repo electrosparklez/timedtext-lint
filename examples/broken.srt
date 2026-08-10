@@ -1,0 +1,13 @@
+1
+00:00:01,000 --> 00:00:03,000
+This caption is far too long to be comfortable on a narrow screen.
+And it has a second line.
+And a third.
+
+2
+00:00:02,700 --> 00:00:02,900
+This arrives too quickly and overlaps the previous cue.
+
+3
+00:00:05,000 --> 00:00:04,000
+Time is running backwards here.

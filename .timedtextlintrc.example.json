@@ -1,0 +1,9 @@
+{
+  "rules": {
+    "overlapping-cues": "error",
+    "max-lines": ["warning", { "max": 2 }],
+    "max-line-length": ["warning", { "max": 42 }],
+    "minimum-duration": ["warning", { "minMs": 500 }],
+    "maximum-reading-speed": ["warning", { "maxCharsPerSecond": 20 }]
+  }
+}

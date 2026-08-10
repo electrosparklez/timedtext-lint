@@ -67,10 +67,11 @@ The step succeeds when there are no lint errors, fails with exit code `1` when l
 ```text
 timedtext-lint <file-or-directory> [...more paths] [options]
 
---format human|json     Output format (default: human)
---config <path>         Load a JSON config (overrides discovery)
---no-config-discovery   Disable automatic config discovery
--h, --help              Show help
+--format human|json|sarif
+                          Output format (default: human)
+--config <path>          Load a JSON config (overrides discovery)
+--no-config-discovery    Disable automatic config discovery
+-h, --help               Show help
 ```
 
 Directories are scanned recursively for `.srt` and `.vtt` files.
@@ -137,6 +138,49 @@ timedtext-lint subtitles/ --format json
 
 JSON output includes per-file issues and an aggregate summary, making it suitable for CI and editor integrations.
 
+## SARIF output
+
+Use SARIF 2.1.0 output to send subtitle diagnostics to GitHub code scanning or another SARIF-compatible tool:
+
+```bash
+timedtext-lint subtitles/ --format sarif > timedtext-lint.sarif
+```
+
+Each diagnostic becomes a SARIF result with its rule ID, `error` or `warning` level, message, repository-relative subtitle path, and starting line. SARIF output preserves the normal exit codes, so lint errors still exit with code `1` after the complete report is written.
+
+The following workflow assumes `timedtext-lint` is installed in the project's development dependencies. The upload step uses `if: always()` so a complete SARIF report is uploaded even when lint findings make the preceding step fail; the workflow still retains that failure status.
+
+```yaml
+name: Subtitle code scanning
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  timedtext-lint-sarif:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Run timedtext-lint
+        run: npx timedtext-lint subtitles/ --format sarif > timedtext-lint.sarif
+      - name: Upload SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: timedtext-lint.sarif
+          category: timedtext-lint
+```
+
+See [the complete SARIF workflow example](.github/examples/timedtext-lint-sarif.yml).
+
 ## Exit codes
 
 - `0`: no errors (warnings may exist)
@@ -170,7 +214,7 @@ The project provides a small core that works locally, in CI, and through a first
 - [x] recursive directory scanning
 - [x] CI test workflow
 - [x] GitHub Action wrapper
-- [ ] SARIF / GitHub code-scanning output
+- [x] SARIF / GitHub code-scanning output
 - [ ] safe `--fix` operations
 - [ ] richer WebVTT validation
 - [ ] documentation site and browser demo

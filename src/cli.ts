@@ -50,7 +50,8 @@ function parseArgs(argv: string[]): Args | null {
     args.inputs.push(arg);
   }
 
-  if (args.inputs.length === 0) throw new Error('Provide at least one .srt/.vtt file or directory.');
+  if (args.inputs.length === 0)
+    throw new Error('Provide at least one .srt/.vtt file or directory.');
   return args;
 }
 

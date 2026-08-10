@@ -10,6 +10,10 @@ export function detectFormat(file: string): SubtitleFormat {
   throw new Error(`Unsupported subtitle format: ${ext || '(no extension)'}`);
 }
 
-export function parseTimedText(source: string, file: string, format = detectFormat(file)): ParseResult {
+export function parseTimedText(
+  source: string,
+  file: string,
+  format = detectFormat(file)
+): ParseResult {
   return format === 'srt' ? parseSrt(source, file) : parseVtt(source, file);
 }

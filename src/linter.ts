@@ -13,12 +13,22 @@ export function lintText(
 
   const malformedConfig = config.rules?.['malformed-timestamp'] ?? 'error';
   const malformedSeverity = Array.isArray(malformedConfig) ? malformedConfig[0] : malformedConfig;
-  const issues = malformedSeverity === 'off' ? [] : parsed.issues.map((item) => ({ ...item, severity: malformedSeverity }));
+  const issues =
+    malformedSeverity === 'off'
+      ? []
+      : parsed.issues.map((item) => ({ ...item, severity: malformedSeverity }));
 
   for (const rule of rules) {
     const resolved = resolveRuleConfig(rule, config);
     if (resolved.severity === 'off') continue;
-    issues.push(...rule.run({ file, cues: parsed.cues, options: resolved.options, severity: resolved.severity }));
+    issues.push(
+      ...rule.run({
+        file,
+        cues: parsed.cues,
+        options: resolved.options,
+        severity: resolved.severity,
+      })
+    );
   }
 
   issues.sort((a, b) => a.line - b.line || a.ruleId.localeCompare(b.ruleId));

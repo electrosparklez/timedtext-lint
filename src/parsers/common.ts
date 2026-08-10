@@ -6,7 +6,7 @@ export interface TimestampPair {
 }
 
 function toMilliseconds(hours: number, minutes: number, seconds: number, millis: number): number {
-  return ((hours * 60 * 60 + minutes * 60 + seconds) * 1000) + millis;
+  return (hours * 60 * 60 + minutes * 60 + seconds) * 1000 + millis;
 }
 
 export function parseSrtTimestamp(value: string): number | null {
@@ -77,7 +77,10 @@ export interface LineBlock {
 }
 
 export function splitBlocks(source: string): LineBlock[] {
-  const lines = source.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n').split('\n');
+  const lines = source
+    .replace(/^\uFEFF/, '')
+    .replace(/\r\n?/g, '\n')
+    .split('\n');
   const blocks: LineBlock[] = [];
   let current: string[] = [];
   let startLine = 1;

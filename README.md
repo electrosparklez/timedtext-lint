@@ -105,10 +105,7 @@ JSON output includes per-file issues and an aggregate summary, making it suitabl
 ```ts
 import { lintText } from 'timedtext-lint';
 
-const result = lintText(
-  `1\n00:00:01,000 --> 00:00:02,000\nHello!\n`,
-  'example.srt'
-);
+const result = lintText(`1\n00:00:01,000 --> 00:00:02,000\nHello!\n`, 'example.srt');
 
 console.log(result.issues);
 ```

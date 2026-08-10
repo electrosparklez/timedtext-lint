@@ -13,9 +13,7 @@ export const duplicateCueRule: LintRule = {
       const key = `${cue.startMs}:${cue.endMs}:${normalized}`;
       const previousIndex = seen.get(key);
       if (previousIndex !== undefined) {
-        issues.push(
-          issue(context, cue, this.id, `Cue duplicates cue ${previousIndex} exactly.`)
-        );
+        issues.push(issue(context, cue, this.id, `Cue duplicates cue ${previousIndex} exactly.`));
       } else {
         seen.set(key, cue.index);
       }

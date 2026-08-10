@@ -1,4 +1,9 @@
-import { malformedTimestampIssue, parseSrtTimestamp, parseTimingLine, splitBlocks } from './common.js';
+import {
+  malformedTimestampIssue,
+  parseSrtTimestamp,
+  parseTimingLine,
+  splitBlocks,
+} from './common.js';
 import type { Cue, ParseResult } from '../types.js';
 
 export function parseSrt(source: string, file: string): ParseResult {

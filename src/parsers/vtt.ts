@@ -1,4 +1,9 @@
-import { malformedTimestampIssue, parseTimingLine, parseVttTimestamp, splitBlocks } from './common.js';
+import {
+  malformedTimestampIssue,
+  parseTimingLine,
+  parseVttTimestamp,
+  splitBlocks,
+} from './common.js';
 import type { Cue, ParseResult } from '../types.js';
 
 const NON_CUE_PREFIXES = ['NOTE', 'STYLE', 'REGION'];
@@ -12,7 +17,8 @@ export function parseVtt(source: string, file: string): ParseResult {
   for (const block of blocks) {
     const first = block.lines[0]?.trim() ?? '';
     if (first.startsWith('WEBVTT')) continue;
-    if (NON_CUE_PREFIXES.some((prefix) => first === prefix || first.startsWith(`${prefix} `))) continue;
+    if (NON_CUE_PREFIXES.some((prefix) => first === prefix || first.startsWith(`${prefix} `)))
+      continue;
 
     let timingIndex = 0;
     let id: string | undefined;

@@ -1,11 +1,6 @@
 import type { Cue, LintIssue, RuleContext } from '../types.js';
 
-export function issue(
-  context: RuleContext,
-  cue: Cue,
-  ruleId: string,
-  message: string
-): LintIssue {
+export function issue(context: RuleContext, cue: Cue, ruleId: string, message: string): LintIssue {
   return {
     file: context.file,
     ruleId,
@@ -16,7 +11,11 @@ export function issue(
   };
 }
 
-export function numberOption(options: Record<string, number>, key: string, fallback: number): number {
+export function numberOption(
+  options: Record<string, number>,
+  key: string,
+  fallback: number
+): number {
   const value = options[key];
   return Number.isFinite(value) ? value : fallback;
 }

@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath, URL } from 'node:url';
 import test from 'node:test';
@@ -48,4 +51,29 @@ test('action entry point propagates timedtext-lint process exit codes', () => {
     });
     assert.equal(result.status, expected, result.stderr || result.stdout);
   }
+});
+
+test('action config input takes priority over automatic discovery', async (context) => {
+  const workingDirectory = await mkdtemp(join(tmpdir(), 'timedtext-lint-action-config-'));
+  context.after(() => rm(workingDirectory, { recursive: true, force: true }));
+  await writeFile(
+    join(workingDirectory, '.timedtextlintrc.json'),
+    JSON.stringify({ rules: { 'max-line-length': ['error', { max: 1 }] } })
+  );
+  const explicitConfig = join(workingDirectory, 'explicit.json');
+  await writeFile(explicitConfig, '{}');
+
+  const discoveredResult = spawnSync(process.execPath, [actionEntry], {
+    cwd: workingDirectory,
+    encoding: 'utf8',
+    env: { ...process.env, INPUT_PATHS: goodFixture },
+  });
+  assert.equal(discoveredResult.status, 1, discoveredResult.stderr || discoveredResult.stdout);
+
+  const explicitResult = spawnSync(process.execPath, [actionEntry], {
+    cwd: workingDirectory,
+    encoding: 'utf8',
+    env: { ...process.env, INPUT_PATHS: goodFixture, INPUT_CONFIG: explicitConfig },
+  });
+  assert.equal(explicitResult.status, 0, explicitResult.stderr || explicitResult.stdout);
 });

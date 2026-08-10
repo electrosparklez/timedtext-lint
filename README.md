@@ -58,7 +58,7 @@ jobs:
           config: .timedtextlintrc.json
 ```
 
-`paths` is required and accepts one file or directory per line. Paths are resolved from the checked-out repository, and directories are scanned recursively for `.srt` and `.vtt` files. `config` is optional and accepts the path to a JSON configuration file.
+`paths` is required and accepts one file or directory per line. Paths are resolved from the checked-out repository, and directories are scanned recursively for `.srt` and `.vtt` files. `config` is optional and accepts an explicit JSON configuration path. When provided, it takes priority over automatic configuration discovery; when omitted, discovery starts from the action's current workspace.
 
 The step succeeds when there are no lint errors, fails with exit code `1` when lint errors are found, and fails with exit code `2` for invalid input, configuration, or runtime errors. See [the complete example workflow](.github/examples/timedtext-lint.yml).
 
@@ -67,9 +67,10 @@ The step succeeds when there are no lint errors, fails with exit code `1` when l
 ```text
 timedtext-lint <file-or-directory> [...more paths] [options]
 
---format human|json    Output format (default: human)
---config <path>        Load a JSON configuration file
--h, --help             Show help
+--format human|json     Output format (default: human)
+--config <path>         Load a JSON config (overrides discovery)
+--no-config-discovery   Disable automatic config discovery
+-h, --help              Show help
 ```
 
 Directories are scanned recursively for `.srt` and `.vtt` files.
@@ -90,7 +91,7 @@ examples/broken.srt
 
 ## Configuration
 
-Create a JSON file such as `.timedtextlintrc.json`:
+Create `.timedtextlintrc.json` in your project directory:
 
 ```json
 {
@@ -104,11 +105,27 @@ Create a JSON file such as `.timedtextlintrc.json`:
 }
 ```
 
-Then run:
+When `--config` is omitted, `timedtext-lint` searches for `.timedtextlintrc.json` in the current working directory and then each parent directory. The nearest matching file is used, so a nested project can override a configuration higher in the directory tree.
+
+Run without an explicit config path to use discovery:
+
+```bash
+timedtext-lint subtitles/
+```
+
+An explicit path always takes priority over a discovered configuration:
 
 ```bash
 timedtext-lint subtitles/ --config .timedtextlintrc.json
 ```
+
+Disable automatic discovery to use the built-in defaults even when a configuration exists in the current directory or a parent:
+
+```bash
+timedtext-lint subtitles/ --no-config-discovery
+```
+
+If no configuration is found, the built-in defaults are used exactly as before. A discovered file that contains malformed JSON or invalid rule settings produces an error that identifies the file instead of being ignored.
 
 Every rule can be set to `"off"`, `"warning"`, or `"error"`. Rules with numeric options use the tuple form shown above.
 

@@ -148,12 +148,14 @@ timedtext-lint subtitles/ --format sarif > timedtext-lint.sarif
 
 Each diagnostic becomes a SARIF result with its rule ID, `error` or `warning` level, message, repository-relative subtitle path, and starting line. SARIF output preserves the normal exit codes, so lint errors still exit with code `1` after the complete report is written.
 
-The following workflow assumes `timedtext-lint` is installed in the project's development dependencies. The upload step uses `if: always()` so a complete SARIF report is uploaded even when lint findings make the preceding step fail; the workflow still retains that failure status.
+The following workflow assumes `timedtext-lint` is installed in the project's development dependencies. It runs on `push`, following GitHub's documented third-party SARIF pattern, because workflows triggered by pull requests from public forks cannot receive the required `security-events: write` permission. It intentionally does not use `pull_request_target` to run untrusted contributor code with elevated permissions.
+
+The upload step uses `if: always()` so a complete SARIF report is uploaded even when lint findings make the preceding step fail; the workflow still retains that failure status.
 
 ```yaml
 name: Subtitle code scanning
 
-on: [push, pull_request]
+on: push
 
 permissions:
   contents: read

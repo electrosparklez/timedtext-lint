@@ -50,7 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: electrosparklez/timedtext-lint@v0.2.0
+      - uses: electrosparklez/timedtext-lint@v0.3.0
         with:
           paths: |
             subtitles/
@@ -213,6 +213,7 @@ The project provides a small core that works locally, in CI, and through a first
 - [x] human-readable output
 - [x] JSON output
 - [x] JSON rule configuration
+- [x] automatic config discovery
 - [x] recursive directory scanning
 - [x] CI test workflow
 - [x] GitHub Action wrapper

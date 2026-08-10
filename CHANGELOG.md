@@ -1,5 +1,30 @@
 # Changelog
 
+## v0.3.0 - 2026-08-10
+
+### Added
+
+- Automatic discovery of the nearest `.timedtextlintrc.json` by searching upward from the current working directory.
+- `--no-config-discovery` for running with built-in defaults when a configuration file is present.
+- SARIF 2.1.0 output through `--format sarif`, including GitHub code-scanning-compatible rule, severity, path, and line metadata.
+- A documented GitHub Actions workflow for generating and uploading SARIF reports.
+- Fixture-based SARIF coverage for both SRT and WebVTT diagnostics.
+
+### Changed
+
+- Malformed or invalid automatically discovered configurations now produce actionable errors that identify the configuration file.
+- Explicit `--config` paths continue to take priority over automatic discovery.
+
+### Maintenance
+
+- Enforced repository-wide LF line endings through `.gitattributes` across Windows, macOS, and Linux.
+- Documented that Windows contributors can retain their normal global `core.autocrlf` setting.
+- Expanded automated coverage for configuration discovery, SARIF output, bundle synchronization, and the first-class GitHub Action.
+
+### Compatibility
+
+- Existing human and JSON output remain compatible, and lint exit-code semantics are unchanged.
+
 ## v0.2.0 - 2026-08-10
 
 ### Added

@@ -1,9 +1,33 @@
-import { readFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { readFile, stat } from 'node:fs/promises';
+import { dirname, join, resolve } from 'node:path';
 import { knownRuleIds } from './rules/index.js';
 import type { RuleValue, Severity, TimedTextConfig } from './types.js';
 
+export const CONFIG_FILENAME = '.timedtextlintrc.json';
+
 const severities = new Set<Severity>(['off', 'warning', 'error']);
+
+export async function discoverConfig(startDirectory = process.cwd()): Promise<string | undefined> {
+  let directory = resolve(startDirectory);
+
+  while (true) {
+    const candidate = join(directory, CONFIG_FILENAME);
+    try {
+      if ((await stat(candidate)).isFile()) return candidate;
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code !== 'ENOENT' && code !== 'ENOTDIR') {
+        throw new Error(
+          `Unable to search for ${CONFIG_FILENAME} at "${candidate}": ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
+    }
+
+    const parent = dirname(directory);
+    if (parent === directory) return undefined;
+    directory = parent;
+  }
+}
 
 function assertRuleValue(ruleId: string, value: unknown): asserts value is RuleValue {
   if (typeof value === 'string' && severities.has(value as Severity)) return;

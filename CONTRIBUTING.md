@@ -9,6 +9,8 @@ Thanks for helping improve subtitle and caption quality.
 3. Run `npm test` while developing.
 4. Run `npm run check` before opening a pull request.
 
+The GitHub Action runs the generated `dist/action.mjs` bundle. `npm run build` refreshes it; include the updated bundle when changing action or lint behavior.
+
 ## Adding a lint rule
 
 Create a module in `src/rules/` that implements `LintRule`, add it to `src/rules/index.ts`, and add tests that cover both valid and invalid cues.

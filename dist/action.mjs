@@ -4,8 +4,8 @@
 import { readFile as readFile2 } from "node:fs/promises";
 
 // src/config.ts
-import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { readFile, stat } from "node:fs/promises";
+import { dirname, join, resolve } from "node:path";
 
 // src/rules/helpers.ts
 function issue(context, cue, ruleId, message) {
@@ -203,7 +203,27 @@ function knownRuleIds() {
 }
 
 // src/config.ts
+var CONFIG_FILENAME = ".timedtextlintrc.json";
 var severities = /* @__PURE__ */ new Set(["off", "warning", "error"]);
+async function discoverConfig(startDirectory = process.cwd()) {
+  let directory = resolve(startDirectory);
+  while (true) {
+    const candidate = join(directory, CONFIG_FILENAME);
+    try {
+      if ((await stat(candidate)).isFile()) return candidate;
+    } catch (error) {
+      const code = error.code;
+      if (code !== "ENOENT" && code !== "ENOTDIR") {
+        throw new Error(
+          `Unable to search for ${CONFIG_FILENAME} at "${candidate}": ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
+    }
+    const parent = dirname(directory);
+    if (parent === directory) return void 0;
+    directory = parent;
+  }
+}
 function assertRuleValue(ruleId, value) {
   if (typeof value === "string" && severities.has(value)) return;
   if (Array.isArray(value) && value.length === 2 && typeof value[0] === "string" && severities.has(value[0]) && typeof value[1] === "object" && value[1] !== null && !Array.isArray(value[1]) && Object.values(value[1]).every((item) => typeof item === "number")) {
@@ -234,19 +254,19 @@ async function loadConfig(path) {
 }
 
 // src/files.ts
-import { readdir, stat } from "node:fs/promises";
-import { extname, join, resolve as resolve2 } from "node:path";
+import { readdir, stat as stat2 } from "node:fs/promises";
+import { extname, join as join2, resolve as resolve2 } from "node:path";
 var SUPPORTED = /* @__PURE__ */ new Set([".srt", ".vtt"]);
 async function collectSubtitleFiles(inputs) {
   const files = [];
   async function visit(input) {
     const path = resolve2(input);
-    const info = await stat(path);
+    const info = await stat2(path);
     if (info.isDirectory()) {
       const entries = await readdir(path, { withFileTypes: true });
       for (const entry of entries) {
         if (entry.name === "node_modules" || entry.name === ".git") continue;
-        await visit(join(path, entry.name));
+        await visit(join2(path, entry.name));
       }
       return;
     }
@@ -480,9 +500,10 @@ Usage:
   timedtext-lint <file-or-directory> [...more paths] [options]
 
 Options:
-  --format human|json    Output format (default: human)
-  --config <path>        Load a JSON configuration file
-  -h, --help             Show this help
+  --format human|json     Output format (default: human)
+  --config <path>         Load a JSON configuration file (overrides discovery)
+  --no-config-discovery   Disable automatic configuration discovery
+  -h, --help              Show this help
 
 Examples:
   timedtext-lint subtitles/
@@ -490,7 +511,7 @@ Examples:
   timedtext-lint captions/ --config .timedtextlintrc.json
 `;
 function parseArgs(argv) {
-  const args = { inputs: [], format: "human" };
+  const args = { inputs: [], format: "human", configDiscovery: true };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     if (arg === "--help" || arg === "-h") return null;
@@ -506,6 +527,10 @@ function parseArgs(argv) {
       args.configPath = value;
       continue;
     }
+    if (arg === "--no-config-discovery") {
+      args.configDiscovery = false;
+      continue;
+    }
     if (arg.startsWith("-")) throw new Error(`Unknown option: ${arg}`);
     args.inputs.push(arg);
   }
@@ -513,14 +538,27 @@ function parseArgs(argv) {
     throw new Error("Provide at least one .srt/.vtt file or directory.");
   return args;
 }
-async function runCli(argv, io = console) {
+async function loadCliConfig(args, cwd) {
+  if (args.configPath) return loadConfig(args.configPath);
+  if (!args.configDiscovery) return loadConfig();
+  const discoveredPath = await discoverConfig(cwd);
+  if (!discoveredPath) return loadConfig();
+  try {
+    return await loadConfig(discoveredPath);
+  } catch (error) {
+    throw new Error(
+      `Discovered configuration "${discoveredPath}" is invalid: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+}
+async function runCli(argv, io = console, options = {}) {
   try {
     const args = parseArgs(argv);
     if (!args) {
       io.log(HELP);
       return 0;
     }
-    const config = await loadConfig(args.configPath);
+    const config = await loadCliConfig(args, options.cwd ?? process.cwd());
     const files = await collectSubtitleFiles(args.inputs);
     if (files.length === 0) throw new Error("No .srt or .vtt files found.");
     const results = [];

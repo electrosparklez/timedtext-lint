@@ -14,21 +14,41 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist", "README.md", "LICENSE"],
-  "engines": {"node": ">=20"},
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "npm run build && node --test tests/*.test.mjs",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "npm run test && npm run lint && npm run format:check",
-    "prepublishOnly": "npm run check"
+    "check": "npm run test && npm run lint",
+    "prepublishOnly": "npm run check && npm run format:check"
   },
-  "keywords": ["subtitles", "captions", "srt", "webvtt", "vtt", "linter", "accessibility", "ci"],
+  "keywords": [
+    "subtitles",
+    "captions",
+    "srt",
+    "webvtt",
+    "vtt",
+    "linter",
+    "accessibility",
+    "ci"
+  ],
   "license": "MIT",
-  "repository": {"type": "git", "url": "git+https://github.com/electrosparklez/timedtext-lint.git"},
-  "bugs": {"url": "https://github.com/electrosparklez/timedtext-lint/issues"},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/electrosparklez/timedtext-lint.git"
+  },
+  "bugs": {
+    "url": "https://github.com/electrosparklez/timedtext-lint/issues"
+  },
   "homepage": "https://github.com/electrosparklez/timedtext-lint#readme",
   "devDependencies": {
     "typescript": "^5.8.3",

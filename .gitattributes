@@ -1,0 +1,2 @@
+# Keep project text files consistent on every operating system.
+* text=auto eol=lf

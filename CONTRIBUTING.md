@@ -9,6 +9,8 @@ Thanks for helping improve subtitle and caption quality.
 3. Run `npm test` while developing.
 4. Run `npm run check` before opening a pull request.
 
+The repository's `.gitattributes` enforces LF line endings for text files on every operating system. Windows contributors can keep their normal global `core.autocrlf` setting; no repository-specific Git configuration is required.
+
 The GitHub Action runs the generated `dist/action.mjs` bundle. `npm run build` refreshes it; include the updated bundle when changing action or lint behavior.
 
 ## Adding a lint rule

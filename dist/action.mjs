@@ -277,7 +277,36 @@ async function collectSubtitleFiles(inputs) {
 }
 
 // src/formatters.ts
-import { relative } from "node:path";
+import { isAbsolute, relative, resolve as resolve3 } from "node:path";
+import { pathToFileURL } from "node:url";
+var SARIF_SCHEMA = "https://json.schemastore.org/sarif-2.1.0.json";
+var SARIF_VERSION = "2.1.0";
+var SARIF_SOURCE_ROOT = "%SRCROOT%";
+var TOOL_NAME = "timedtext-lint";
+var TOOL_INFORMATION_URI = "https://github.com/electrosparklez/timedtext-lint";
+function toSarifLevel(severity) {
+  return severity;
+}
+function ruleDescription(ruleId) {
+  const words = ruleId.replaceAll("-", " ");
+  return `${words.charAt(0).toUpperCase()}${words.slice(1)}`;
+}
+function directoryUri(directory) {
+  const uri = pathToFileURL(resolve3(directory)).href;
+  return uri.endsWith("/") ? uri : `${uri}/`;
+}
+function relativeUri(path) {
+  return path.split(/[\\/]+/).map((segment) => encodeURIComponent(segment)).join("/");
+}
+function artifactLocation(file, sourceRoot) {
+  const root = resolve3(sourceRoot);
+  const absolute = isAbsolute(file) ? file : resolve3(root, file);
+  const path = relative(root, absolute);
+  if (path && !isAbsolute(path)) {
+    return { uri: relativeUri(path), uriBaseId: SARIF_SOURCE_ROOT };
+  }
+  return { uri: pathToFileURL(absolute).href };
+}
 function summarize(results) {
   const issues = results.flatMap((result) => result.issues);
   return {
@@ -308,6 +337,51 @@ function formatHuman(results) {
 }
 function formatJson(results) {
   return JSON.stringify({ results, summary: summarize(results) }, null, 2);
+}
+function formatSarif(results, sourceRoot = process.cwd()) {
+  const issues = results.flatMap((result) => result.issues);
+  const ruleLevels = /* @__PURE__ */ new Map();
+  for (const item of issues) {
+    const level = toSarifLevel(item.severity);
+    if (level === "error" || !ruleLevels.has(item.ruleId)) ruleLevels.set(item.ruleId, level);
+  }
+  const rules2 = [...ruleLevels.entries()].sort(([left], [right]) => left.localeCompare(right)).map(([ruleId, level]) => ({
+    id: ruleId,
+    shortDescription: { text: ruleDescription(ruleId) },
+    defaultConfiguration: { level }
+  }));
+  const sarif = {
+    $schema: SARIF_SCHEMA,
+    version: SARIF_VERSION,
+    runs: [
+      {
+        tool: {
+          driver: {
+            name: TOOL_NAME,
+            informationUri: TOOL_INFORMATION_URI,
+            rules: rules2
+          }
+        },
+        originalUriBaseIds: {
+          [SARIF_SOURCE_ROOT]: { uri: directoryUri(sourceRoot) }
+        },
+        results: issues.map((item) => ({
+          ruleId: item.ruleId,
+          level: toSarifLevel(item.severity),
+          message: { text: item.message },
+          locations: [
+            {
+              physicalLocation: {
+                artifactLocation: artifactLocation(item.file, sourceRoot),
+                region: { startLine: Math.max(1, item.line) }
+              }
+            }
+          ]
+        }))
+      }
+    ]
+  };
+  return JSON.stringify(sarif, null, 2);
 }
 
 // src/parsers/index.ts
@@ -500,7 +574,8 @@ Usage:
   timedtext-lint <file-or-directory> [...more paths] [options]
 
 Options:
-  --format human|json     Output format (default: human)
+  --format human|json|sarif
+                          Output format (default: human)
   --config <path>         Load a JSON configuration file (overrides discovery)
   --no-config-discovery   Disable automatic configuration discovery
   -h, --help              Show this help
@@ -517,7 +592,9 @@ function parseArgs(argv) {
     if (arg === "--help" || arg === "-h") return null;
     if (arg === "--format") {
       const value = argv[++index];
-      if (value !== "human" && value !== "json") throw new Error("--format must be human or json.");
+      if (value !== "human" && value !== "json" && value !== "sarif") {
+        throw new Error("--format must be human, json, or sarif.");
+      }
       args.format = value;
       continue;
     }
@@ -558,7 +635,8 @@ async function runCli(argv, io = console, options = {}) {
       io.log(HELP);
       return 0;
     }
-    const config = await loadCliConfig(args, options.cwd ?? process.cwd());
+    const cwd = options.cwd ?? process.cwd();
+    const config = await loadCliConfig(args, cwd);
     const files = await collectSubtitleFiles(args.inputs);
     if (files.length === 0) throw new Error("No .srt or .vtt files found.");
     const results = [];
@@ -566,7 +644,9 @@ async function runCli(argv, io = console, options = {}) {
       const source = await readFile2(file, "utf8");
       results.push(lintText(source, file, config));
     }
-    io.log(args.format === "json" ? formatJson(results) : formatHuman(results));
+    io.log(
+      args.format === "json" ? formatJson(results) : args.format === "sarif" ? formatSarif(results, cwd) : formatHuman(results)
+    );
     return summarize(results).errors > 0 ? 1 : 0;
   } catch (error) {
     io.error(`timedtext-lint: ${error instanceof Error ? error.message : String(error)}`);
